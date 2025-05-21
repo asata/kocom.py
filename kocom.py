@@ -584,6 +584,7 @@ def packet_processor(p):
             state = fan_parse(p['value'])
             logtxt='[MQTT publish|fan] data[{}]'.format(state)
             mqttc.publish("kocom/livingroom/fan/state", json.dumps(state))
+            mqttc.publish('kocom/livingroom/air/state', json.dumps(state), retain=True)
         elif p['src'] == 'gas':
             state = {'state': p['cmd']}
             logtxt='[MQTT publish|gas] data[{}]'.format(state)
@@ -648,27 +649,7 @@ def publish_discovery(dev, sub=''):
             }
         }
         logtxt='[MQTT Discovery|{}] data[{}]'.format(dev, topic)
-        mqttc.publish(topic, json.dumps(payload))
-
-        topic1 = f'homeassistant/sensor/kocom_wallpad_air_co2/config'
-        payload1 = {
-            'name': 'kocom_air_co2',
-            'stat_t': 'kocom/livingroom/air/state',
-            'val_tpl': '{{ value_json.co2 }}',
-            'qos': 0,
-            'uniq_id': 'kocom_air_co2',
-            'icon': 'mdi:molecule-co2',
-            'unit_of_meas': 'ppm',
-            'device': {
-                'name': '코콤 스마트 월패드',
-                'ids': 'kocom_smart_wallpad',
-                'mf': 'KOCOM',
-                'mdl': '스마트 월패드',
-                'sw': SW_VERSION
-            }
-        }
-        mqttc.publish(topic1, json.dumps(payload1))
-     
+        mqttc.publish(topic, json.dumps(payload))     
         if logtxt != "" and config.get('Log', 'show_mqtt_publish') == 'True':
             logging.info(logtxt)
     elif dev == 'air':
