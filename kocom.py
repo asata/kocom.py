@@ -610,6 +610,7 @@ def packet_processor(p):
 
 def discovery():
     dev_list = [x.strip() for x in config.get('Device','enabled').split(',')]
+    logging.info(config.get('Device','enabled'))
     for t in dev_list:
         dev = t.split('_')
         sub = ''
@@ -655,6 +656,7 @@ def publish_discovery(dev, sub=''):
     elif dev == 'air':
         air_attr = {'pm10': ['molecule', 'µg/m³'], 'pm25': ['molecule', 'µg/m³'], 'co2': ['molecule-co2', 'ppm'], 'tvocs': ['molecule', 'ppb'], 'temperature': ['thermometer', '°C'], 'humidity': ['water-percent', '%'], 'score': ['periodic-table', '%']}
         for key, icon_unit in air_attr.items():
+            logging.info(key)
             icon, unit = icon_unit
             topic = f'homeassistant/sensor/kocom_wallpad_air_{key}/config'
             payload = {
