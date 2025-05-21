@@ -619,6 +619,7 @@ def discovery():
         publish_discovery(dev[0], sub)
         if logtxt != "" and config.get('Log', 'show_mqtt_discovery') == 'True':
             logging.info(logtxt)
+    publish_discovery('air')
     publish_discovery('query')
 
 #https://www.home-assistant.io/docs/mqtt/discovery/
@@ -655,7 +656,6 @@ def publish_discovery(dev, sub=''):
     elif dev == 'air':
         air_attr = {'pm10': ['molecule', 'µg/m³'], 'pm25': ['molecule', 'µg/m³'], 'co2': ['molecule-co2', 'ppm'], 'tvocs': ['molecule', 'ppb'], 'temperature': ['thermometer', '°C'], 'humidity': ['water-percent', '%'], 'score': ['periodic-table', '%']}
         for key, icon_unit in air_attr.items():
-            logging.info(key)
             icon, unit = icon_unit
             topic = f'homeassistant/sensor/kocom_wallpad_air_{key}/config'
             payload = {
