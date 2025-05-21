@@ -584,7 +584,6 @@ def packet_processor(p):
             state = fan_parse(p['value'])
             logtxt='[MQTT publish|fan] data[{}]'.format(state)
             mqttc.publish("kocom/livingroom/fan/state", json.dumps(state))
-            mqttc.publish("kocom/livingroom/air/state", json.dumps(state), retain=True)
         elif p['src'] == 'gas':
             state = {'state': p['cmd']}
             logtxt='[MQTT publish|gas] data[{}]'.format(state)
@@ -636,6 +635,7 @@ def publish_discovery(dev, sub=''):
             'pr_mode_cmd_t': 'kocom/livingroom/fan/set_preset_mode/command',
             'pr_mode_cmd_tpl': '{{ value }}',
             'pr_modes': ['Off', 'Low', 'Medium', 'High'],
+            'co2': '{{ value_json.co2 }}',
             'pl_on': 'on',
             'pl_off': 'off',
             'qos': 0,
@@ -653,8 +653,7 @@ def publish_discovery(dev, sub=''):
         if logtxt != "" and config.get('Log', 'show_mqtt_publish') == 'True':
             logging.info(logtxt)
     elif dev == 'air':
-        air_attr = {'co2': ['molecule-co2', 'ppm']}
-        # air_attr = {'pm10': ['molecule', 'µg/m³'], 'pm25': ['molecule', 'µg/m³'], 'co2': ['molecule-co2', 'ppm'], 'tvocs': ['molecule', 'ppb'], 'temperature': ['thermometer', '°C'], 'humidity': ['water-percent', '%'], 'score': ['periodic-table', '%']}
+        air_attr = {'pm10': ['molecule', 'µg/m³'], 'pm25': ['molecule', 'µg/m³'], 'co2': ['molecule-co2', 'ppm'], 'tvocs': ['molecule', 'ppb'], 'temperature': ['thermometer', '°C'], 'humidity': ['water-percent', '%'], 'score': ['periodic-table', '%']}
         for key, icon_unit in air_attr.items():
             icon, unit = icon_unit
             topic = f'homeassistant/sensor/kocom_wallpad_air_{key}/config'
