@@ -610,13 +610,12 @@ def packet_processor(p):
 
 def discovery():
     dev_list = [x.strip() for x in config.get('Device','enabled').split(',')]
-    logging.info(config.get('Device','enabled'))
     for t in dev_list:
         dev = t.split('_')
         sub = ''
         if len(dev) > 1:
             sub = dev[1]
-        logtxt='[MQTT Discovery|{}] data[{}]'.format(dev[0], sub)
+        logtxt='[MQTT Discovery 1|{}] data[{}]'.format(dev[0], sub)
         publish_discovery(dev[0], sub)
         if logtxt != "" and config.get('Log', 'show_mqtt_discovery') == 'True':
             logging.info(logtxt)
@@ -727,8 +726,7 @@ def publish_discovery(dev, sub=''):
         mqttc.publish(topic, json.dumps(payload))
         if logtxt != "" and config.get('Log', 'show_mqtt_publish') == 'True':
             logging.info(logtxt)
-    elif dev == 'light':
-                                  
+    elif dev == 'light':                    
         for num in range(1, int(config.get('User', 'light_count'))+1):
             #ha_topic = 'homeassistant/light/kocom_livingroom_light1/config'
             topic = 'homeassistant/light/kocom_{}_light{}/config'.format(sub, num)
