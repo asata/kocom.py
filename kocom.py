@@ -635,7 +635,6 @@ def publish_discovery(dev, sub=''):
             'pr_mode_cmd_t': 'kocom/livingroom/fan/set_preset_mode/command',
             'pr_mode_cmd_tpl': '{{ value }}',
             'pr_modes': ['Off', 'Low', 'Medium', 'High'],
-            'co2': '{{ value_json.co2 }}',
             'pl_on': 'on',
             'pl_off': 'off',
             'qos': 0,
@@ -650,6 +649,26 @@ def publish_discovery(dev, sub=''):
         }
         logtxt='[MQTT Discovery|{}] data[{}]'.format(dev, topic)
         mqttc.publish(topic, json.dumps(payload))
+
+        topic1 = f'homeassistant/sensor/kocom_wallpad_air_co2/config'
+        payload1 = {
+            'name': 'kocom_air_co2',
+            'stat_t': 'kocom/livingroom/air/state',
+            'val_tpl': '{{ value_json.co2 }}',
+            'qos': 0,
+            'uniq_id': 'kocom_air_co2',
+            'icon': 'mdi:molecule-co2',
+            'unit_of_meas': 'ppm',
+            'device': {
+                'name': '코콤 스마트 월패드',
+                'ids': 'kocom_smart_wallpad',
+                'mf': 'KOCOM',
+                'mdl': '스마트 월패드',
+                'sw': SW_VERSION
+            }
+        }
+        mqttc.publish(topic1, json.dumps(payload1))
+     
         if logtxt != "" and config.get('Log', 'show_mqtt_publish') == 'True':
             logging.info(logtxt)
     elif dev == 'air':
