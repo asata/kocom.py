@@ -23,7 +23,7 @@ import configparser
 
 
 # define -------------------------------
-SW_VERSION = '2023.08.012'
+SW_VERSION = '2025.05.001'
 CONFIG_FILE = 'kocom.conf'
 BUF_SIZE = 100
 
@@ -584,7 +584,6 @@ def packet_processor(p):
             state = fan_parse(p['value'])
             logtxt='[MQTT publish|fan] data[{}]'.format(state)
             mqttc.publish("kocom/livingroom/fan/state", json.dumps(state))
-            mqttc.publish('kocom/livingroom/air/state', json.dumps(state), retain=True)
         elif p['src'] == 'gas':
             state = {'state': p['cmd']}
             logtxt='[MQTT publish|gas] data[{}]'.format(state)
@@ -619,7 +618,6 @@ def discovery():
         publish_discovery(dev[0], sub)
         if logtxt != "" and config.get('Log', 'show_mqtt_discovery') == 'True':
             logging.info(logtxt)
-    publish_discovery('air')
     publish_discovery('query')
 
 #https://www.home-assistant.io/docs/mqtt/discovery/
