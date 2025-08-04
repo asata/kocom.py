@@ -23,7 +23,7 @@ import configparser
 
 
 # define -------------------------------
-SW_VERSION = '2025.05.001'
+SW_VERSION = '2025.08.001'
 CONFIG_FILE = 'kocom.conf'
 BUF_SIZE = 100
 
@@ -301,14 +301,16 @@ def light_parse(value):
 
 def fan_parse(value):
     preset_dic = {'40':'Low', '80':'Medium', 'c0':'High'}
+    mode_dic = {'00':'off', '01':'vent', '04':'bypass', '05':'night'}
 #   state = 'off' if value[:2] == '10' else 'on'
     state = 'off' if value[:2] == '00' else 'on'
+    mode = 'Off' if state == 'off' else mode_dic.get(value[2:4])
     preset = 'Off' if state == 'off' else preset_dic.get(value[4:6])
     co2 = int(value[8:12], 16)
-    logtxt='[MQTT Parse | Fan] value[{}], state[{}]'.format(value, state)    # 20221108 주석기능 추가
+    logtxt='[MQTT Parse | Fan] value[{}], state[{}], mode[{}]'.format(value, state, mode)    # 20221108 주석기능 추가
     if logtxt != "" and config.get('Log', 'show_recv_hex') == 'True':
         logging.info(logtxt)
-    return { 'state': state, 'preset': preset, 'co2': co2 }
+    return { 'state': state, 'preset': preset, 'mode': mode, 'co2': co2 }
 
 # 2023.08 AC 추가
 def ac_parse(value):
@@ -768,7 +770,7 @@ def publish_discovery(dev, sub=''):
             'curr_temp_t': 'kocom/room/thermo/{}/state'.format(num),
             'curr_temp_tpl': '{{ value_json.cur_temp }}',
             'modes': ['off', 'heat'],
-            'min_temp': 20,
+            'min_temp': 10,
             'max_temp': 30,
             'ret': 'false',
             'qos': 0,
