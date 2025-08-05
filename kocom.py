@@ -301,16 +301,16 @@ def light_parse(value):
 
 def fan_parse(value):
     preset_dic = {'40':'Low', '80':'Medium', 'c0':'High'}
-    mode_dic = {'00':'off', '01':'vent', '04':'bypass', '05':'night'}
+    mode_dic = {'00':'off', '01':'vent', '02':'auto', '03':'bypass', '05':'night'}
 #   state = 'off' if value[:2] == '10' else 'on'
     state = 'off' if value[:2] == '00' else 'on'
-    mode = 'Off' if state == 'off' else mode_dic.get(value[2:4])
+    fan_mode = 'Off' if state == 'off' else mode_dic.get(value[2:4])
     preset = 'Off' if state == 'off' else preset_dic.get(value[4:6])
     co2 = int(value[8:12], 16)
-    logtxt='[MQTT Parse | Fan] value[{}], state[{}], mode[{}]'.format(value, state, mode)    # 20221108 주석기능 추가
+    logtxt='[MQTT Parse | Fan] value[{}], state[{}], mode[{}]'.format(value, state, fan_mode)    # 20221108 주석기능 추가
     if logtxt != "" and config.get('Log', 'show_recv_hex') == 'True':
         logging.info(logtxt)
-    return { 'state': state, 'preset': preset, 'mode': mode, 'co2': co2 }
+    return { 'state': state, 'preset': preset, 'mode': fan_mode, 'co2': co2 }
 
 # 2023.08 AC 추가
 def ac_parse(value):
@@ -537,6 +537,22 @@ def mqtt_on_message(mqttc, obj, msg):
         value = onoff + speed + '0'*10
         send_wait_response(dest=dev_id, value=value, log='fan')
 
+    # kocom/livingroom/fan/set_mode/command/speed
+    elif 'fan' in topic_d and 'set_mode' in topic_d:
+        dev_id = device_h_dic['fan'] + room_h_dic.get(topic_d[1])
+        onoff_dic = {'off':'00', 'on':'11'}  
+        mode_dic = {'off':'00', 'vent':'01', 'auto':'02', 'bypass':'03', 'night':'05'}
+        speed_dic = {'Off':'00', 'Low':'40', 'Medium':'80', 'High':'c0'}
+        if command == 'Off':
+            onoff = onoff_dic['off']
+        elif command in mode_dic.keys(): # fan on with specified speed
+            onoff = onoff_dic['on']
+
+        mode = mode_dic.get(command)
+        speedVal = speed_dic.get(speed)
+        value = onoff + mode + speed + '0'*10
+        send_wait_response(dest=dev_id, value=value, log='fan')
+
     # kocom/livingroom/fan/command
     elif 'fan' in topic_d:
         dev_id = device_h_dic['fan'] + room_h_dic.get(topic_d[1])
@@ -637,6 +653,7 @@ def publish_discovery(dev, sub=''):
             'pr_mode_cmd_t': 'kocom/livingroom/fan/set_preset_mode/command',
             'pr_mode_cmd_tpl': '{{ value }}',
             'pr_modes': ['Off', 'Low', 'Medium', 'High'],
+            'run_mode_cmt_t': 'kocom/livingroom/fan/set_mode/command/speed',
             'pl_on': 'on',
             'pl_off': 'off',
             'qos': 0,
