@@ -602,11 +602,11 @@ def packet_processor(p):
             state = fan_parse(p['value'])
             logtxt='[MQTT publish|fan] data[{}]'.format(state)
             mqttc.publish("kocom/livingroom/fan/state", json.dumps(state))
+            mqttc.publish('kocom/livingroom/air/state', json.dumps(state), retain=True)
         elif p['src'] == 'gas':
             state = {'state': p['cmd']}
             logtxt='[MQTT publish|gas] data[{}]'.format(state)
             mqttc.publish("kocom/livingroom/gas/state", json.dumps(state))
-            mqttc.publish('kocom/livingroom/air/state', json.dumps(state), retain=True)
     elif p['type'] == 'send' and p['dest'] == 'elevator':
         floor = int(p['value'][2:4],16)
         rs485_floor = int(config.get('Elevator','rs485_floor', fallback=0))
@@ -637,6 +637,7 @@ def discovery():
         publish_discovery(dev[0], sub)
         if logtxt != "" and config.get('Log', 'show_mqtt_discovery') == 'True':
             logging.info(logtxt)
+    publish_discovery('air')
     publish_discovery('query')
 
 #https://www.home-assistant.io/docs/mqtt/discovery/
