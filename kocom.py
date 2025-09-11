@@ -606,6 +606,7 @@ def packet_processor(p):
             state = {'state': p['cmd']}
             logtxt='[MQTT publish|gas] data[{}]'.format(state)
             mqttc.publish("kocom/livingroom/gas/state", json.dumps(state))
+            mqttc.publish('kocom/livingroom/air/state', json.dumps(state), retain=True)
     elif p['type'] == 'send' and p['dest'] == 'elevator':
         floor = int(p['value'][2:4],16)
         rs485_floor = int(config.get('Elevator','rs485_floor', fallback=0))
