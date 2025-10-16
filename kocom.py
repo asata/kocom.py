@@ -532,7 +532,8 @@ def mqtt_on_message(mqttc, obj, msg):
 
         if command == 'Off':
             onoff = onoff_dic['off']
-        elif command in speed_dic.keys(): # fan on with specified speed
+        else:
+        # elif command in speed_dic.keys(): # fan on with specified speed
             onoff = onoff_dic['on']
 
         result = command.split('_')
