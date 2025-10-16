@@ -23,7 +23,7 @@ import configparser
 
 
 # define -------------------------------
-SW_VERSION = '2025.08.001'
+SW_VERSION = '2025.09.002'
 CONFIG_FILE = 'kocom.conf'
 BUF_SIZE = 100
 
@@ -306,7 +306,7 @@ def fan_parse(value):
     state = 'off' if value[:2] == '00' else 'on'
     fan_mode = 'Off' if state == 'off' else mode_dic.get(value[2:4])
     preset = 'Off' if state == 'off' else preset_dic.get(value[4:6])
-    co2 = int(value[8:12], 16)
+    co2 = int(value[8:10], 16) * 100 + int(value[10:12], 16)
     logtxt='[MQTT Parse | Fan] value[{}], state[{}], mode[{}]'.format(value, state, fan_mode)    # 20221108 주석기능 추가
     if logtxt != "" and config.get('Log', 'show_recv_hex') == 'True':
         logging.info(logtxt)
@@ -598,6 +598,7 @@ def packet_processor(p):
             state = fan_parse(p['value'])
             logtxt='[MQTT publish|fan] data[{}]'.format(state)
             mqttc.publish("kocom/livingroom/fan/state", json.dumps(state))
+            mqttc.publish('kocom/livingroom/air/state', json.dumps(state), retain=True)
         elif p['src'] == 'gas':
             state = {'state': p['cmd']}
             logtxt='[MQTT publish|gas] data[{}]'.format(state)
@@ -632,6 +633,7 @@ def discovery():
         publish_discovery(dev[0], sub)
         if logtxt != "" and config.get('Log', 'show_mqtt_discovery') == 'True':
             logging.info(logtxt)
+    publish_discovery('air')
     publish_discovery('query')
 
 #https://www.home-assistant.io/docs/mqtt/discovery/
