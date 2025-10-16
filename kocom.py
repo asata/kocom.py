@@ -543,10 +543,10 @@ def mqtt_on_message(mqttc, obj, msg):
             else:
                 mode = mode_dic.get('Low')
         else:
-            mode = speed_dic.get(result[0], '00')
+            mode = mode_dic.get(result[0], '00')
             speed = speed_dic.get(result[1], '00')
 
-        value = onoff + mode +  speed + '0'*10
+        value = onoff + mode + speed + '0'*10
         send_wait_response(dest=dev_id, value=value, log='fan')
 
     # kocom/livingroom/fan/command
