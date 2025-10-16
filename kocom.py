@@ -525,32 +525,28 @@ def mqtt_on_message(mqttc, obj, msg):
     # kocom/livingroom/fan/set_preset_mode/command
     elif 'fan' in topic_d and 'set_preset_mode' in topic_d:
         dev_id = device_h_dic['fan'] + room_h_dic.get(topic_d[1])
-        onoff_dic = {'off':'0000', 'on':'1101'}  
-       #onoff_dic = {'off':'1000', 'on':'1100'}
+        # onoff_dic = {'off':'0000', 'on':'1101'}  
+        onoff_dic = {'off':'00', 'on':'11'}
         speed_dic = {'Off':'00', 'Low':'40', 'Medium':'80', 'High':'c0'}
+        mode_dic = {'Off':'00', 'Vent':'01', 'Auto':'02', 'Bypass':'03', 'Night':'05'}
+
         if command == 'Off':
             onoff = onoff_dic['off']
         elif command in speed_dic.keys(): # fan on with specified speed
             onoff = onoff_dic['on']
 
-        speed = speed_dic.get(command)
-        value = onoff + speed + '0'*10
-        send_wait_response(dest=dev_id, value=value, log='fan')
+        result = command.split('_')
+        if len(result) == 1:
+            speed = speed_dic.get(result[0], '00')
+            if speed == '00':
+                mode = mode_dic.get('Off')
+            else:
+                mode = mode_dic.get('Low')
+        else:
+            mode = speed_dic.get(result[0], '00')
+            speed = speed_dic.get(result[1], '00')
 
-    # kocom/livingroom/fan/set_mode/command/speed
-    elif 'fan' in topic_d and 'set_mode' in topic_d:
-        dev_id = device_h_dic['fan'] + room_h_dic.get(topic_d[1])
-        onoff_dic = {'off':'00', 'on':'11'}  
-        mode_dic = {'off':'00', 'vent':'01', 'auto':'02', 'bypass':'03', 'night':'05'}
-        speed_dic = {'Off':'00', 'Low':'40', 'Medium':'80', 'High':'c0'}
-        if command == 'Off':
-            onoff = onoff_dic['off']
-        elif command in mode_dic.keys(): # fan on with specified speed
-            onoff = onoff_dic['on']
-
-        mode = mode_dic.get(command)
-        speedVal = speed_dic.get(speed)
-        value = onoff + mode + speed + '0'*10
+        value = onoff + mode +  speed + '0'*10
         send_wait_response(dest=dev_id, value=value, log='fan')
 
     # kocom/livingroom/fan/command
@@ -652,7 +648,8 @@ def publish_discovery(dev, sub=''):
             'pr_mode_val_tpl': '{{ value_json.preset }}',
             'pr_mode_cmd_t': 'kocom/livingroom/fan/set_preset_mode/command',
             'pr_mode_cmd_tpl': '{{ value }}',
-            'pr_modes': ['Off', 'Low', 'Medium', 'High'],
+            'pr_modes': ['Off', 'Vent_Low', 'Vent_Medium', 'Vent_High', 'Auto_Low', 'Auto_Medium', 'Auto_High', 'Bypass_Low', 'Bypass_Medium', 'Bypass_High' , 'Night_Low', 'Night_Medium', 'Night_High'],
+            # 'pr_modes': ['Off', 'Low', 'Medium', 'High'],
             'run_mode_cmt_t': 'kocom/livingroom/fan/set_mode/command/speed',
             'pl_on': 'on',
             'pl_off': 'off',
