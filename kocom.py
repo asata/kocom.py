@@ -527,7 +527,7 @@ def mqtt_on_message(mqttc, obj, msg):
         dev_id = device_h_dic['fan'] + room_h_dic.get(topic_d[1])
         # onoff_dic = {'off':'0000', 'on':'1101'}  
         onoff_dic = {'off':'00', 'on':'11'}
-        speed_dic = {'Off':'00', 'Low':'40', 'Medium':'80', 'High':'c0'}
+        speed_dic = {'Off':'00', 'Auto':'00', 'Low':'40', 'Medium':'80', 'High':'c0'}
         mode_dic = {'Off':'00', 'Vent':'01', 'Auto':'02', 'Bypass':'03', 'Night':'05'}
 
         if command == 'Off':
@@ -651,8 +651,23 @@ def publish_discovery(dev, sub=''):
             'pr_mode_val_tpl': '{{ value_json.preset }}',
             'pr_mode_cmd_t': 'kocom/livingroom/fan/set_preset_mode/command',
             'pr_mode_cmd_tpl': '{{ value }}',
-            'pr_modes': ['Off', 'Vent_Low', 'Vent_Medium', 'Vent_High', 'Auto_Low', 'Auto_Medium', 'Auto_High', 'Bypass_Low', 'Bypass_Medium', 'Bypass_High' , 'Night_Low', 'Night_Medium', 'Night_High'],
-            # 'pr_modes': ['Off', 'Low', 'Medium', 'High'],
+            'preset_mode_value_template': """
+                {% set val = value | lower %}
+                {% if val == 'off' %}
+                Off
+                {% elif val.startswith('vent_') %}
+                {{ '전열 - ' + val.split('_')[1].capitalize() }}
+                {% elif val.startswith('auto_auto') %}
+                자동모드
+                {% elif val.startswith('bypass_') %}
+                {{ '바이패스 - ' + val.split('_')[1].capitalize() }}
+                {% elif val.startswith('night_') %}
+                {{ '취침모드 - ' + val.split('_')[1].capitalize() }}
+                {% else %}
+                {{ value }}
+                {% endif %}
+            """,
+            'pr_modes': ['Off', 'Vent_Low', 'Vent_Medium', 'Vent_High', 'Auto_Auto', 'Bypass_Low', 'Bypass_Medium', 'Bypass_High', 'Night_Low', 'Night_Medium', 'Night_High'],
             'run_mode_cmt_t': 'kocom/livingroom/fan/set_mode/command/speed',
             'pl_on': 'on',
             'pl_off': 'off',
