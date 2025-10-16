@@ -525,29 +525,17 @@ def mqtt_on_message(mqttc, obj, msg):
     # kocom/livingroom/fan/set_preset_mode/command
     elif 'fan' in topic_d and 'set_preset_mode' in topic_d:
         dev_id = device_h_dic['fan'] + room_h_dic.get(topic_d[1])
-        # onoff_dic = {'off':'0000', 'on':'1101'}  
-        onoff_dic = {'off':'00', 'on':'11'}
-        speed_dic = {'Off':'00', 'Auto':'00', 'Low':'40', 'Medium':'80', 'High':'c0'}
+        onoff_dic = {'off':'0000', 'on':'1101'}  
+        speed_dic = {'Off':'00', 'Low':'40', 'Medium':'80', 'High':'c0'}
         mode_dic = {'Off':'00', 'Vent':'01', 'Auto':'02', 'Bypass':'03', 'Night':'05'}
 
         if command == 'Off':
             onoff = onoff_dic['off']
-        else:
-        # elif command in speed_dic.keys(): # fan on with specified speed
+        elif command in speed_dic.keys(): # fan on with specified speed
             onoff = onoff_dic['on']
 
-        result = command.split('_')
-        if len(result) == 1:
-            speed = speed_dic.get(result[0], '00')
-            if speed == '00':
-                mode = mode_dic.get('Off')
-            else:
-                mode = mode_dic.get('Low')
-        else:
-            mode = mode_dic.get(result[0], '00')
-            speed = speed_dic.get(result[1], '00')
-
-        value = onoff + mode + speed + '0'*10
+        speed = speed_dic.get(command)
+        value = onoff + speed + '0'*10
         send_wait_response(dest=dev_id, value=value, log='fan')
 
     # kocom/livingroom/fan/command
@@ -651,23 +639,7 @@ def publish_discovery(dev, sub=''):
             'pr_mode_val_tpl': '{{ value_json.preset }}',
             'pr_mode_cmd_t': 'kocom/livingroom/fan/set_preset_mode/command',
             'pr_mode_cmd_tpl': '{{ value }}',
-            'preset_mode_value_template': """
-                {% set val = value | lower %}
-                {% if val == 'off' %}
-                Off
-                {% elif val.startswith('vent_') %}
-                {{ '전열 - ' + val.split('_')[1].capitalize() }}
-                {% elif val.startswith('auto_auto') %}
-                자동모드
-                {% elif val.startswith('bypass_') %}
-                {{ '바이패스 - ' + val.split('_')[1].capitalize() }}
-                {% elif val.startswith('night_') %}
-                {{ '취침모드 - ' + val.split('_')[1].capitalize() }}
-                {% else %}
-                {{ value }}
-                {% endif %}
-            """,
-            'pr_modes': ['Off', 'Vent_Low', 'Vent_Medium', 'Vent_High', 'Auto_Auto', 'Bypass_Low', 'Bypass_Medium', 'Bypass_High', 'Night_Low', 'Night_Medium', 'Night_High'],
+            'pr_modes': ['Off', 'Low', 'Medium', 'High'],
             'run_mode_cmt_t': 'kocom/livingroom/fan/set_mode/command/speed',
             'pl_on': 'on',
             'pl_off': 'off',
