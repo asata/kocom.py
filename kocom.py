@@ -23,7 +23,7 @@ import configparser
 
 
 # define -------------------------------
-SW_VERSION = '2025.10.001'
+SW_VERSION = '2025.10.006'
 CONFIG_FILE = 'kocom.conf'
 BUF_SIZE = 100
 
@@ -47,6 +47,9 @@ seq_h_dic = {v: k for k, v in seq_t_dic.items()}
 device_h_dic = {v: k for k, v in device_t_dic.items()}
 cmd_h_dic = {v: k for k, v in cmd_t_dic.items()}
 room_h_dic = {'livingroom':'00', 'myhome':'00', 'room1':'01', 'room2':'02', 'room3':'03', 'kitchen':'04'}
+if int(config.get('User', 'room_count', fallback='3')) == 4:
+    room_t_dic = {'00':'livingroom', '01':'room1', '02':'room2', '03':'room3', '04':'room4', '05':'kitchen'}
+    room_h_dic = {'livingroom':'00', 'myhome':'00', 'room1':'01', 'room2':'02', 'room3':'03', 'room4':'04', 'kitchen':'05'}
 
 # mqtt functions ----------------------------
 
@@ -300,17 +303,20 @@ def light_parse(value):
 
 
 def fan_parse(value):
-    preset_dic = {'40':'Low', '80':'Medium', 'c0':'High'}
     mode_dic = {'00':'off', '01':'vent', '02':'auto', '03':'bypass', '05':'night'}
-#   state = 'off' if value[:2] == '10' else 'on'
+    speed_dic = {'00':'Auto', '40':'Low', '80':'Medium', 'c0':'High'}
+    preset_dic = {'0000':'Off', '0140':'Vent_Low', '0180':'Vent_Medium', '01c0':'Vent_High', '0200':'Auto', '0240':'Auto', '0280':'Auto', '02c0':'Auto', '0340':'Bypass_Low', '0380':'Bypass_Medium', '03c0':'Bypass_High', '0540':'Night'}
+
     state = 'off' if value[:2] == '00' else 'on'
     fan_mode = 'Off' if state == 'off' else mode_dic.get(value[2:4])
-    preset = 'Off' if state == 'off' else preset_dic.get(value[4:6])
+    fan_speed = 'Off' if state == 'off' else speed_dic.get(value[4:6])
+    preset = 'Off' if state == 'off' else preset_dic.get(value[2:6])
     co2 = int(value[8:10], 16) * 100 + int(value[10:12], 16)
-    logtxt='[MQTT Parse | Fan] value[{}], state[{}], mode[{}]'.format(value, state, fan_mode)    # 20221108 주석기능 추가
+
+    logtxt='[MQTT Parse | Fan] value[{}], state[{}], mode[{}], speed[{}], preset[{}]'.format(value, state, fan_mode, fan_speed, preset)    # 20221108 주석기능 추가
     if logtxt != "" and config.get('Log', 'show_recv_hex') == 'True':
         logging.info(logtxt)
-    return { 'state': state, 'preset': preset, 'mode': fan_mode, 'co2': co2 }
+    return { 'state': state, 'preset': preset, 'mode': fan_mode, 'speed': fan_speed, 'co2': co2 }
 
 # 2023.08 AC 추가
 def ac_parse(value):
@@ -427,7 +433,7 @@ def mqtt_on_message(mqttc, obj, msg):
 
     # thermo heat/off : kocom/room/thermo/3/heat_mode/command
     if 'thermo' in topic_d and 'heat_mode' in topic_d:
-#       heatmode_dic = {'heat': '11', 'off': '01'}
+        # heatmode_dic = {'heat': '11', 'off': '01'}
         heatmode_dic = {'heat': '11', 'off': '00'}
 
         dev_id = device_h_dic['thermo']+'{0:02x}'.format(int(topic_d[3]))
@@ -445,7 +451,7 @@ def mqtt_on_message(mqttc, obj, msg):
         value = '1100' + settemp_hex + '0000000000'
         send_wait_response(dest=dev_id, value=value, log='thermo settemp')
 
- # 2023.08 AC 추가
+    # 2023.08 AC 추가
     elif 'ac' in topic_d and 'ac_mode' in topic_d:
         is_on = '10' if command != 'off' else '00'
         acmode_dic = {'off': '00', 'cool': '00','fan_only': '01', 'dry': '02', 'auto': '03'}
@@ -516,7 +522,8 @@ def mqtt_on_message(mqttc, obj, msg):
                 return
 
             threading.Thread(target=mqttc.publish, args=("kocom/myhome/elevator/state", state_on)).start()
-            if config.get('Elevator', 'rs485_floor', fallback=None) == None:
+            # 엘레베이터 층수 정보를 가져올 수 없음
+            if config.get('Elevator', 'rs485_floor', fallback=None) != None:
                 threading.Timer(5, mqttc.publish, args=("kocom/myhome/elevator/state", state_off)).start()
 
         elif command == 'off':
@@ -525,10 +532,11 @@ def mqtt_on_message(mqttc, obj, msg):
     # kocom/livingroom/fan/set_preset_mode/command
     elif 'fan' in topic_d and 'set_preset_mode' in topic_d:
         dev_id = device_h_dic['fan'] + room_h_dic.get(topic_d[1])
-        onoff_dic = {'off':'0000', 'on':'1101'}  
-        speed_dic = {'Off':'00', 'Low':'40', 'Medium':'80', 'High':'c0'}
-        mode_dic = {'Off':'00', 'Vent':'01', 'Auto':'02', 'Bypass':'03', 'Night':'05'}
+        # onoff_dic = {'off':'0000', 'on':'1101'}
+        # speed_dic = {'Off':'00', 'Low':'40', 'Medium':'80', 'High':'c0'}
 
+        onoff_dic = {'off':'00', 'on':'11'}
+        speed_dic = {'Off':'0000', 'Vent_Low':'0140', 'Vent_Medium':'0180', 'Vent_High':'01c0', 'Auto':'0240', 'Bypass_Low':'0340', 'Bypass_Medium':'0380', 'Bypass_High':'03c0', 'Night':'0540'}
         if command == 'Off':
             onoff = onoff_dic['off']
         elif command in speed_dic.keys(): # fan on with specified speed
@@ -542,8 +550,8 @@ def mqtt_on_message(mqttc, obj, msg):
     elif 'fan' in topic_d:
         dev_id = device_h_dic['fan'] + room_h_dic.get(topic_d[1])
         onoff_dic = {'off':'0000', 'on':'1101'}  
-       #onoff_dic = {'off':'1000', 'on':'1100'}
-        speed_dic = {'Low':'40', 'Medium':'80', 'High':'c0'}
+        # onoff_dic = {'off':'1000', 'on':'1100'}
+        speed_dic = {'Vent_Low':'40', 'Vent_Medium':'80', 'Vent_High':'c0', 'Low':'40', 'Medium':'80', 'High':'c0'}
         init_fan_mode = config.get('User', 'init_fan_mode')
         if command in onoff_dic.keys(): # fan on off with previous speed
             onoff = onoff_dic.get(command)
@@ -596,9 +604,9 @@ def packet_processor(p):
         floor = int(p['value'][2:4],16)
         rs485_floor = int(config.get('Elevator','rs485_floor', fallback=0))
         if rs485_floor != 0 :
-            state = {'floor': floor}
-            if rs485_floor == floor:
-                state['state'] = 'off'
+            state = {'floor': floor, 'state':'off'}
+            # if rs485_floor == floor:
+            #     state['state'] = 'off'
         else:
             state = {'state': 'off'}
         logtxt='[MQTT publish|elevator] data[{}]'.format(state)
@@ -639,7 +647,8 @@ def publish_discovery(dev, sub=''):
             'pr_mode_val_tpl': '{{ value_json.preset }}',
             'pr_mode_cmd_t': 'kocom/livingroom/fan/set_preset_mode/command',
             'pr_mode_cmd_tpl': '{{ value }}',
-            'pr_modes': ['Off', 'Low', 'Medium', 'High'],
+            # 'pr_modes': ['Off', 'Low', 'Medium', 'High'],
+            'pr_modes': ['Off', 'Vent_Low', 'Vent_Medium', 'Vent_High', 'Auto', 'Bypass_Low', 'Bypass_Medium', 'Bypass_High', 'Night'],
             'run_mode_cmt_t': 'kocom/livingroom/fan/set_mode/command/speed',
             'pl_on': 'on',
             'pl_off': 'off',
@@ -658,7 +667,8 @@ def publish_discovery(dev, sub=''):
         if logtxt != "" and config.get('Log', 'show_mqtt_publish') == 'True':
             logging.info(logtxt)
     elif dev == 'air':
-        air_attr = {'pm10': ['molecule', 'µg/m³'], 'pm25': ['molecule', 'µg/m³'], 'co2': ['molecule-co2', 'ppm'], 'tvocs': ['molecule', 'ppb'], 'temperature': ['thermometer', '°C'], 'humidity': ['water-percent', '%'], 'score': ['periodic-table', '%']}
+        # air_attr = {'pm10': ['molecule', 'µg/m³'], 'pm25': ['molecule', 'µg/m³'], 'co2': ['molecule-co2', 'ppm'], 'tvocs': ['molecule', 'ppb'], 'temperature': ['thermometer', '°C'], 'humidity': ['water-percent', '%'], 'score': ['periodic-table', '%']}
+        air_attr = {'co2': ['molecule-co2', 'ppm']}
         for key, icon_unit in air_attr.items():
             icon, unit = icon_unit
             topic = f'homeassistant/sensor/kocom_wallpad_air_{key}/config'
@@ -742,7 +752,7 @@ def publish_discovery(dev, sub=''):
                 'pl_on': 'on',
                 'pl_off': 'off',
                 'qos': 0,
-#               'uniq_id': '{}_{}_{}{}'.format('kocom', 'wallpad', dev, num),      # 20221108 주석처리
+                # 'uniq_id': '{}_{}_{}{}'.format('kocom', 'wallpad', dev, num),      # 20221108 주석처리
                 'uniq_id': '{}_{}_{}{}'.format('kocom', sub, dev, num),            # 20221108 수정
                                                                     
                 'device': {
@@ -759,7 +769,7 @@ def publish_discovery(dev, sub=''):
                 logging.info(logtxt)
     elif dev == 'thermo':
         num = int(room_h_dic.get(sub))
-        #ha_topic = 'homeassistant/climate/kocom_livingroom_thermostat/config'
+        # ha_topic = 'homeassistant/climate/kocom_livingroom_thermostat/config'
         topic = 'homeassistant/climate/kocom_{}_thermostat/config'.format(sub)
         payload = {
             'name': 'Kocom {} Thermostat'.format(sub),
@@ -858,7 +868,7 @@ def poll_state(enforce=False):
     dev_list = [x.strip() for x in config.get('Device','enabled').split(',')]
     no_polling_list = ['wallpad', 'elevator']
 
-    #thread health check
+    # thread health check
     for thread_instance in thread_list:
         if thread_instance.is_alive() == False:
             logging.error('[THREAD] {} is not active. starting.'.format( thread_instance.name))
