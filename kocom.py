@@ -23,7 +23,7 @@ import configparser
 
 
 # define -------------------------------
-SW_VERSION = '2025.10.006'
+SW_VERSION = '2025.10.007'
 CONFIG_FILE = 'kocom.conf'
 BUF_SIZE = 100
 
@@ -47,9 +47,6 @@ seq_h_dic = {v: k for k, v in seq_t_dic.items()}
 device_h_dic = {v: k for k, v in device_t_dic.items()}
 cmd_h_dic = {v: k for k, v in cmd_t_dic.items()}
 room_h_dic = {'livingroom':'00', 'myhome':'00', 'room1':'01', 'room2':'02', 'room3':'03', 'kitchen':'04'}
-if int(config.get('User', 'room_count', fallback='3')) == 4:
-    room_t_dic = {'00':'livingroom', '01':'room1', '02':'room2', '03':'room3', '04':'room4', '05':'kitchen'}
-    room_h_dic = {'livingroom':'00', 'myhome':'00', 'room1':'01', 'room2':'02', 'room3':'03', 'room4':'04', 'kitchen':'05'}
 
 # mqtt functions ----------------------------
 
@@ -984,6 +981,10 @@ if __name__ == "__main__":
 
     config = configparser.ConfigParser()
     config.read(CONFIG_FILE)
+
+    if int(config.get('User', 'room_count', fallback='3')) == 4:
+        room_t_dic = {'00':'livingroom', '01':'room1', '02':'room2', '03':'room3', '04':'room4', '05':'kitchen'}
+        room_h_dic = {'livingroom':'00', 'myhome':'00', 'room1':'01', 'room2':'02', 'room3':'03', 'room4':'04', 'kitchen':'05'}
 
     if config.get('RS485', 'type') == 'serial':
         import serial
