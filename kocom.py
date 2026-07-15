@@ -23,7 +23,7 @@ import configparser
 
 
 # define -------------------------------
-SW_VERSION = '2025.10.007'
+SW_VERSION = '20266.07.004'
 CONFIG_FILE = 'kocom.conf'
 BUF_SIZE = 100
 
@@ -300,9 +300,9 @@ def light_parse(value):
 
 
 def fan_parse(value):
-    mode_dic = {'00':'off', '01':'vent', '02':'auto', '03':'bypass', '05':'night'}
+    mode_dic = {'00':'off', '01':'vent', '02':'auto', '03':'bypass', '05':'night', '09':'purify'}
     speed_dic = {'00':'Auto', '40':'Low', '80':'Medium', 'c0':'High'}
-    preset_dic = {'0000':'Off', '0140':'Vent_Low', '0180':'Vent_Medium', '01c0':'Vent_High', '0200':'Auto', '0240':'Auto', '0280':'Auto', '02c0':'Auto', '0340':'Bypass_Low', '0380':'Bypass_Medium', '03c0':'Bypass_High', '0540':'Night'}
+    preset_dic = {'0000':'Off', '0140':'Vent_Low', '0180':'Vent_Medium', '01c0':'Vent_High', '0200':'Auto', '0240':'Auto', '0280':'Auto', '02c0':'Auto', '0340':'Bypass_Low', '0380':'Bypass_Medium', '03c0':'Bypass_High', '0540':'Night', '0940':'Purify_Low', '0980':'Purify_Medium', '09c0':'Purify_High'}
 
     state = 'off' if value[:2] == '00' else 'on'
     fan_mode = 'Off' if state == 'off' else mode_dic.get(value[2:4])
@@ -533,7 +533,7 @@ def mqtt_on_message(mqttc, obj, msg):
         # speed_dic = {'Off':'00', 'Low':'40', 'Medium':'80', 'High':'c0'}
 
         onoff_dic = {'off':'00', 'on':'11'}
-        speed_dic = {'Off':'0000', 'Vent_Low':'0140', 'Vent_Medium':'0180', 'Vent_High':'01c0', 'Auto':'0240', 'Bypass_Low':'0340', 'Bypass_Medium':'0380', 'Bypass_High':'03c0', 'Night':'0540'}
+        speed_dic = {'Off':'0000', 'Vent_Low':'0140', 'Vent_Medium':'0180', 'Vent_High':'01c0', 'Auto':'0240', 'Bypass_Low':'0340', 'Bypass_Medium':'0380', 'Bypass_High':'03c0', 'Night':'0540', 'Purify_Low':'0940', 'Purify_Medium':'0980', 'Purify_High':'09c0'}
         if command == 'Off':
             onoff = onoff_dic['off']
         elif command in speed_dic.keys(): # fan on with specified speed
@@ -645,7 +645,7 @@ def publish_discovery(dev, sub=''):
             'pr_mode_cmd_t': 'kocom/livingroom/fan/set_preset_mode/command',
             'pr_mode_cmd_tpl': '{{ value }}',
             # 'pr_modes': ['Off', 'Low', 'Medium', 'High'],
-            'pr_modes': ['Off', 'Vent_Low', 'Vent_Medium', 'Vent_High', 'Auto', 'Bypass_Low', 'Bypass_Medium', 'Bypass_High', 'Night'],
+            'pr_modes': ['Off', 'Vent_Low', 'Vent_Medium', 'Vent_High', 'Auto', 'Bypass_Low', 'Bypass_Medium', 'Bypass_High', 'Night', 'Purify_Low', 'Purify_Medium', 'Purify_High'],
             'run_mode_cmt_t': 'kocom/livingroom/fan/set_mode/command/speed',
             'pl_on': 'on',
             'pl_off': 'off',
